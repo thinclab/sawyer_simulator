@@ -80,6 +80,8 @@
       <arg name="gui" value="$(arg gui)" />
   </include>
 
+  <node name="sawyer_joint_trajectory_action_server" pkg="intera_interface" type="joint_trajectory_action_server.py"/>
+
   <!-- sawyer cameras launch file -->
   <arg name="wrist_camera" default="right_hand_camera" />
   <arg name="head_camera"  default="head_camera" />
