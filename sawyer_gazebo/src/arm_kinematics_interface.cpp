@@ -253,7 +253,8 @@ void ArmKinematicsInterface::publishGravityTorques()
     auto num_jnts = kinematic_chain_map_[tip_name_].chain.getNrOfJoints();
     KDL::JntArray jnt_pos(num_jnts), jnt_vel(num_jnts), jnt_eff(num_jnts), jnt_accelerations(num_jnts);
     KDL::JntArray jnt_gravity_model(num_jnts), jnt_gravity_only(num_jnts), jnt_zero(num_jnts);
-    jointStateToKDL(*joint_state, kinematic_chain_map_[tip_name_], jnt_pos, jnt_vel, jnt_eff);
+    if ( ! jointStateToKDL(*joint_state, kinematic_chain_map_[tip_name_], jnt_pos, jnt_vel, jnt_eff) ) 
+	return;
 
     std::shared_ptr<const intera_core_msgs::JointCommand> joint_command;
     joint_command_buffer_.get(joint_command);
@@ -332,11 +333,12 @@ void ArmKinematicsInterface::jointCommandToGravityMsg(const std::vector<std::str
   }
 }
 
-void ArmKinematicsInterface::jointStateToKDL(const sensor_msgs::JointState& joint_state, const Kinematics& kin,
+bool ArmKinematicsInterface::jointStateToKDL(const sensor_msgs::JointState& joint_state, const Kinematics& kin,
                                              KDL::JntArray& jnt_pos, KDL::JntArray& jnt_vel, KDL::JntArray& jnt_eff)
 {
   auto num_jnts = kin.joint_names.size();
   auto num_msg = joint_state.name.size();
+  bool any_match = false;
   // Check to see if there are any values before allocating space
   if (!joint_state.position.empty())
   {
@@ -359,6 +361,7 @@ void ArmKinematicsInterface::jointStateToKDL(const sensor_msgs::JointState& join
     {
       if (joint_state.name[msg_idx] == kin.joint_names[jnt_idx])
       {
+        any_match = true;
         if (msg_idx < joint_state.position.size())
           jnt_pos(jnt_idx) = joint_state.position[msg_idx];
         if (msg_idx < joint_state.velocity.size())
@@ -369,6 +372,7 @@ void ArmKinematicsInterface::jointStateToKDL(const sensor_msgs::JointState& join
       }
     }
   }
+  return any_match;
 }
 
 bool ArmKinematicsInterface::servicePositionIK(intera_core_msgs::SolvePositionIK::Request& req,
@@ -566,7 +570,8 @@ void ArmKinematicsInterface::publishEndpointState()
       intera_core_msgs::EndpointState endpoint_state;
       endpoint_state.valid = true;
       KDL::JntArray jnt_pos, jnt_vel, jnt_eff;
-      jointStateToKDL(*joint_state.get(), chain.second, jnt_pos, jnt_vel, jnt_eff);
+      if (! jointStateToKDL(*joint_state.get(), chain.second, jnt_pos, jnt_vel, jnt_eff))
+	continue;
       if (!computePositionFK(chain.second, jnt_pos, endpoint_state.pose))
       {
         endpoint_state.valid &= false;

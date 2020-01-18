@@ -167,7 +167,7 @@ bool computeGravity(const Kinematics& kin, const KDL::JntArray& jnt_pos,
 /* Method to break down a JointState message object into the corresponding
  * KDL position, velocity, and effort Joint Arrays
  */
-void jointStateToKDL(const sensor_msgs::JointState& joint_configuration, const Kinematics& kin,
+bool jointStateToKDL(const sensor_msgs::JointState& joint_configuration, const Kinematics& kin,
                      KDL::JntArray& jnt_pos, KDL::JntArray& jnt_vel, KDL::JntArray& jnt_eff);
 
 /* Method to break down a JointState message object into the corresponding
